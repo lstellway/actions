@@ -143,5 +143,5 @@ runs:
         --no-deps -d
       shell: bash
       env:
-        DOCKER_HOST: ssh://${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_PORT }}
+        DOCKER_HOST: ssh://${{ inputs.ssh-user }}@${{ inputs.ssh-host }}:${{ inputs.ssh-port }}
 
