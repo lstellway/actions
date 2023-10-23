@@ -1,0 +1,152 @@
+name: 'Deploy Docker compose SSH'
+description: 'Deploy a set of docker-compose files to a remote environment via SSH'
+
+inputs:
+  # Example
+  who-to-greet:  # id of input
+    description: 'Who to greet'
+    required: true
+    default: 'World'
+
+  # webfactory/ssh-agent
+  ssh-private-key:
+      description: 'Private SSH key to register in the SSH agent'
+      required: true
+  ssh-auth-sock:
+      description: 'Where to place the SSH Agent auth socket'
+  log-public-key:
+      description: 'Whether or not to log public key fingerprints'
+      required: false
+      default: true
+  ssh-agent-cmd:
+      description: 'ssh-agent command'
+      required: false
+  ssh-add-cmd:
+      description: 'ssh-add command'
+      required: false
+  git-cmd:
+      description: 'git command'
+      required: false
+
+  # docker/login-action
+  docker-registry:
+    description: 'Server address of Docker registry. If not set then will default to Docker Hub'
+    required: false
+  docker-username:
+    description: 'Username used to log against the Docker registry'
+    required: false
+  docker-password:
+    description: 'Password or personal access token used to log against the Docker registry'
+    required: false
+  docker-ecr:
+    description: 'Specifies whether the given registry is ECR (auto, true or false)'
+    default: 'auto'
+    required: false
+  docker-logout:
+    description: 'Log out from the Docker registry at the end of a job'
+    default: 'true'
+    required: false
+
+  # Specific to job
+  ssh-host:
+    description: The remote hostname or IP address of the Docker host
+    required: true
+  ssh-persist:
+    description: The amount of time SSH sessions should persist
+    required: false
+    default: 5m
+  ssh-port:
+    description: Public port on which to access SSH
+    required: false
+    default: 22
+  ssh-user:
+    description: SSH user used for the remote SSH session
+    required: true
+  docker-compose-files:
+    description: Docker compose files to deploy (separated by comma or newline)
+    required: true
+  docker-project:
+    description: The Docker-compose project name
+    required: false
+
+outputs:
+  random-number:
+    description: "Random number"
+    value: ${{ steps.random-number-generator.outputs.random-number }}
+
+runs:
+  using: "composite"
+  steps:
+    # Setup variables
+    - name: Extract variables
+      id: variables
+      run: |
+        DOCKER_COMPOSE_FILES="${{ inputs.docker-compose-files }}"
+        # Replace commas
+        DOCKER_COMPOSE_FILES=${DOCKER_COMPOSE_FILES//,/ -f }
+        # Replace newlines
+        DOCKER_COMPOSE_FILES=${DOCKER_COMPOSE_FILES//$'\n'/ -f }
+        echo "DOCKER_COMPOSE_FILES=${DOCKER_COMPOSE_FILES}" >> $GITHUB_OUTPUT
+
+        DOCKER_PROJECT=$([ -n "${{ inputs.docker-compose-files }}" ] && echo --project-name ${{ inputs.docker-compose-files }})
+        echo "DOCKER_PROJECT=${DOCKER_PROJECT}" >> $GITHUB_OUTPUT
+      shell: bash
+
+    # Leveraging external action for simplicity for now
+    - name: Add SSH key
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ inputs.ssh-private-key }}
+        log-public-key: ${{ inputs.log-public-key }}
+        ssh-auth-sock: ${{ inputs.ssh-auth-sock }}
+        ssh-agent-cmd: ${{ inputs.ssh-agent-cmd }}
+        ssh-add-cmd: ${{ inputs.ssh-add-cmd }}
+        git-cmd: ${{ inputs.git-cmd }}
+
+    - name: Add host key
+      run: |
+        ssh-keyscan -p ${{ inputs.ssh-port }} ${{ inputs.ssh-host }} >> "${HOME}/.ssh/known_hosts"
+        chmod 600 "${HOME}/.ssh/known_hosts"
+      shell: bash
+
+    # Docker recommends persisting SSH connections for a better performance
+    # @see https://docs.docker.com/engine/security/protect-access/#ssh-tips
+    - name: SSH configuration
+      run: |
+        cat << EOF >> "${HOME}/.ssh/config"
+        Host *
+            ControlMaster     auto
+            ControlPath       ${HOME}/.ssh/control-%C
+            ControlPersist    ${{ inputs.ssh-persist }}
+      shell: bash
+
+    # Leveraging external action for simplicity for now
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ inputs.docker-registry }}
+        username: ${{ inputs.docker-username }}
+        password: ${{ inputs.docker-password }}
+        ecr: ${{ inputs.docker-ecr }}
+        logout: ${{ inputs.docker-logout }}
+
+    - name: Pull Docker images
+      run: >
+        docker compose
+        -f ${{ steps.variables.outputs.DOCKER_COMPOSE_FILES }}
+        pull
+      env:
+        DOCKER_HOST: ssh://${{ inputs.ssh-user }}@${{ inputs.ssh-host }}:${{ inputs.ssh-port }}
+      shell: bash
+
+    - name: Deploy Docker compose files
+      run: >
+        docker compose
+        -f ${{ steps.variables.outputs.DOCKER_COMPOSE_FILES }}
+        ${{ steps.variables.outputs.DOCKER_PROJECT }}
+        up
+        --no-deps -d
+      shell: bash
+      env:
+        DOCKER_HOST: ssh://${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_PORT }}
+
