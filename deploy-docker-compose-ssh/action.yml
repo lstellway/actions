@@ -89,7 +89,7 @@ runs:
 
     # Leveraging external action for simplicity for now
     - name: Add SSH key
-      uses: webfactory/ssh-agent@v0.7.0
+      uses: webfactory/ssh-agent@v0.8.0
       with:
         ssh-private-key: ${{ inputs.ssh-private-key }}
         log-public-key: ${{ inputs.log-public-key }}
