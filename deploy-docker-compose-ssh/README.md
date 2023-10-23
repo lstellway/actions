@@ -2,14 +2,22 @@
 
 GitHub [composite action](https://docs.github.com/en/actions/creating-actions/creating-a-composite-action) for deploying a set of docker-compose files to a remote environment via SSH.
 
+<br />
+
 ## Inputs
 
-This action utilizes two external GitHub actions _(and supports all of their inputs)_:
+**External action inputs**
 
--   [webfactory/ssh-agent](https://github.com/webfactory/ssh-agent) _([input variables](https://github.com/webfactory/ssh-agent/tree/v0.8.0#action-inputs))_
+This action utilizes the following external GitHub actions _(and supports all of their inputs)_:
+
+-   [`webfactory/ssh-agent`](https://github.com/webfactory/ssh-agent) _([input variables](https://github.com/webfactory/ssh-agent/tree/v0.8.0#action-inputs))_
     -   Used to prepare the SSH environment
--   [docker/login-action](https://github.com/docker/login-action) _([input variables](https://github.com/docker/login-action/tree/v3#inputs))_
+-   [`docker/login-action`](https://github.com/docker/login-action) _([input variables](https://github.com/docker/login-action/tree/v3#inputs))_
     -   Used to facilitate logging into the Docker registry
+
+<br />
+
+**Internal inputs**
 
 Additionally, the following inputs can be used in the [`steps.with`](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepswith) object hashmap:<br />
 _(required fields marked with `*`)_
@@ -22,6 +30,8 @@ _(required fields marked with `*`)_
 | `ssh-user`\*             | String |         | SSH user used for the remote SSH session                                                                                         |
 | `docker-compose-files`\* | String |         | Docker compose files to deploy _(separated by comma or newline)_                                                                 |
 | `docker-project`         | String |         | The Docker-compose project name _([documentation](https://docs.docker.com/compose/reference/#use--p-to-specify-a-project-name))_ |
+
+<br />
 
 ## Usage
 
