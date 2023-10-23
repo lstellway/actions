@@ -2,12 +2,6 @@ name: 'Deploy Docker compose SSH'
 description: 'Deploy a set of docker-compose files to a remote environment via SSH'
 
 inputs:
-  # Example
-  who-to-greet:  # id of input
-    description: 'Who to greet'
-    required: true
-    default: 'World'
-
   # webfactory/ssh-agent
   ssh-private-key:
       description: 'Private SSH key to register in the SSH agent'
