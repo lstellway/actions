@@ -83,7 +83,7 @@ runs:
         DOCKER_COMPOSE_FILES=${DOCKER_COMPOSE_FILES//$'\n'/ -f }
         echo "DOCKER_COMPOSE_FILES=${DOCKER_COMPOSE_FILES}" >> $GITHUB_OUTPUT
 
-        DOCKER_PROJECT=$([ -n "${{ inputs.docker-project }}" ] && echo --project-name ${{ inputs.docker-compose-files }})
+        DOCKER_PROJECT=$([ -n "${{ inputs.docker-project }}" ] && echo --project-name ${{ inputs.docker-project }})
         echo "DOCKER_PROJECT=${DOCKER_PROJECT}" >> $GITHUB_OUTPUT
       shell: bash
 
