@@ -63,7 +63,9 @@ jobs:
           log-public-key: true
           # Docker
           # Multiple compose files can be provided, separated by a comma or newline
-          docker-compose-files: docker-compose.yml,docker-compose.dev.yml
+          docker-compose-files: |
+	    docker-compose.yml
+	    docker-compose.dev.yml
           docker-project: myprojectname
           docker-registry: ${{ secrets.DOCKER_REGISTRY }}
           docker-username: ${{ github.repository_owner }}
