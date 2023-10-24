@@ -70,11 +70,12 @@ runs:
     - name: Extract variables
       id: variables
       run: |
+        # Initialize variable
         DOCKER_COMPOSE_FILES="${{ inputs.docker-compose-files }}"
-        # Replace commas
-        DOCKER_COMPOSE_FILES=${DOCKER_COMPOSE_FILES//,/ -f }
-        # Replace newlines
-        DOCKER_COMPOSE_FILES=${DOCKER_COMPOSE_FILES//$'\n'/ -f }
+        # Replace commas with spaces
+        DOCKER_COMPOSE_FILES=${DOCKER_COMPOSE_FILES//,/ }
+        # Prepend the "-f" argument to each file
+        DOCKER_COMPOSE_FILES=$(echo "${DOCKER_COMPOSE_FILES}" | xargs printf -- '-f %s\n' | xargs)
         echo "DOCKER_COMPOSE_FILES=${DOCKER_COMPOSE_FILES}" >> $GITHUB_OUTPUT
 
         DOCKER_PROJECT=$([ -n "${{ inputs.docker-project }}" ] && echo --project-name ${{ inputs.docker-project }})
@@ -122,7 +123,7 @@ runs:
     - name: Pull Docker images
       run: >
         docker compose
-        -f ${{ steps.variables.outputs.DOCKER_COMPOSE_FILES }}
+        ${{ steps.variables.outputs.DOCKER_COMPOSE_FILES }}
         pull
       env:
         DOCKER_HOST: ssh://${{ inputs.ssh-user }}@${{ inputs.ssh-host }}:${{ inputs.ssh-port }}
@@ -131,7 +132,7 @@ runs:
     - name: Deploy Docker compose files
       run: >
         docker compose
-        -f ${{ steps.variables.outputs.DOCKER_COMPOSE_FILES }}
+        ${{ steps.variables.outputs.DOCKER_COMPOSE_FILES }}
         ${{ steps.variables.outputs.DOCKER_PROJECT }}
         up
         --no-deps -d
