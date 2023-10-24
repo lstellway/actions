@@ -53,7 +53,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Deploy Docker compose files
-        uses: lstellway/actions/deploy-docker-compose-ssh@0.0.1
+        uses: lstellway/actions/deploy-docker-compose-ssh@0.0.2
         with:
           # SSH
           ssh-user: ${{ secrets.SSH_USER }}
